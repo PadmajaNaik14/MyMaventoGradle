@@ -1,12 +1,16 @@
-
 pipeline {
-    agent any  // Use any available agent
+    agent any  
 
     tools {
-        gradle 'Gradle'  // Ensure this matches the name configured in Jenkins
-        jdk 'JDK'
+        maven 'Maven'
     }
+
+    environment {
+        JAR_FILE = "target/MyMaventoGradle-1.0-SNAPSHOT.jar"
+    }
+
     stages {
+
         stage('Checkout') {
             steps {
                 git branch: 'master', url: 'https://github.com/PadmajaNaik14/MyMaventoGradle.git'
@@ -15,35 +19,50 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'gradle build'  // Run Gradle build
+                sh 'mvn clean compile'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'gradle test'  // Run unit tests
+                sh 'mvn test'
             }
         }
 
-        
-        
-       
+        stage('Package') {
+            steps {
+                sh 'mvn package -DskipTests'
+            }
+        }
+
+        stage('Verify JAR') {
+            steps {
+                sh '''
+                echo "Current directory:"
+                pwd
+
+                echo "Files in target folder:"
+                ls -l target/
+                '''
+            }
+        }
+
         stage('Run Application') {
             steps {
-                // Start the JAR application
-                sh 'gradle run'
+                sh '''
+                echo "Starting application..."
+                nohup java -jar target/MyMaventoGradle-1.0-SNAPSHOT.jar > app.log 2>&1 &
+                '''
             }
         }
-
-        
     }
 
     post {
         success {
-            echo 'Build and deployment successful!'
+            echo 'Build and deployment successful! 🎉'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Build failed! ❌'
         }
     }
 }
